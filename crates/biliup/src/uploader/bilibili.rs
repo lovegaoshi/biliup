@@ -271,6 +271,38 @@ impl BiliBili {
         self.submit_by_app(studio, proxy).await
     }
 
+    /// 通过 Web 接口投稿
+    pub async fn submit_by_web(
+        &self,
+        studio: &Studio,
+        proxy: Option<&str>,
+    ) -> Result<ResponseData> {
+        let ts = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+
+        let ret: ResponseData = self
+            .client
+            .post(format!(
+                "https://member.bilibili.com/x/vu/web/add/v3?t={ts}&csrf={}",
+                self.get_csrf()?
+            ))
+            .json(studio)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        info!("{:?}", ret);
+        if ret.code == 0 {
+            info!("Web 接口投稿成功");
+            Ok(ret)
+        } else {
+            Err(Kind::Custom(format!("{:?}", ret)))
+        }
+    }
+
     /// 使用必剪接口投稿
     pub async fn submit_by_bcut_android(
         &self,
